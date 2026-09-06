@@ -1,0 +1,35 @@
+CONSULTA CID x SIGTAP — NIR/HMM
+================================
+
+COMO USAR
+1. Abra a pasta Consulta_SIGTAP_HMM.
+2. No Windows, dê dois cliques em ABRIR_NO_WINDOWS.bat.
+   No Mac, dê dois cliques em ABRIR_NO_MAC.command.
+   Se preferir, abra diretamente o arquivo index.html.
+3. O programa abrirá no navegador padrão do Windows ou do Mac.
+4. Digite um código CID-10 ou parte do nome do diagnóstico.
+5. Selecione o CID e consulte os procedimentos SIGTAP relacionados.
+6. Por padrão, ficam selecionados o grupo 03 — Procedimentos clínicos,
+   a modalidade 02 — Hospitalar e o instrumento de registro AIH.
+7. Para consultar outros cenários, altere as respectivas caixas de seleção.
+8. Se necessário, filtre também pelo tipo de vínculo do CID.
+9. O CBO 225125 — Médico clínico já vem selecionado. Para outro profissional,
+   escolha o CBO correspondente ou selecione "Todos os CBOs".
+10. Com o grupo 03 selecionado, marque "Apenas subgrupos pertinentes ao HMM"
+    para limitar os resultados aos subgrupos 03, 04, 05, 06, 07 e 08.
+
+O programa funciona totalmente offline. Não mova nem renomeie o arquivo
+dados.js separadamente do index.html; os dois devem permanecer na mesma pasta.
+
+IMPORTANTE
+Esta ferramenta apoia a consulta. Ela não substitui a conferência das regras,
+atributos complementares, habilitações, compatibilidades e normas vigentes.
+
+BASE ATUAL
+SIGTAP competência 07/2026, conforme arquivo fornecido.
+
+ATUALIZAÇÃO DA TABELA (para o responsável técnico)
+Na pasta superior, execute:
+  python gerar_dados.py caminho/para/nova_tabela_sigtap.zip
+
+Isso substitui apenas o arquivo dados.js e mantém o programa atualizado.

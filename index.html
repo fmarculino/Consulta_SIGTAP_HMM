@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b4f4a">
+  <title>Consulta CID × SIGTAP — NIR/HMM</title>
+  <style>
+    :root {
+      --ink: #18302e; --muted: #657876; --line: #d9e4e1; --paper: #fff;
+      --canvas: #f3f7f5; --green: #0b5f57; --green2: #0f766e; --mint: #dff3ed;
+      --amber: #9a5b00; --amber-bg: #fff4d9; --shadow: 0 15px 45px rgba(17,54,50,.10);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { height: 8px; background: linear-gradient(90deg, #073f3b, #0f766e 65%, #e4a833); }
+    header { background: #083f3b; color: white; }
+    .header-inner { max-width: 1180px; margin: auto; padding: 26px 24px 94px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .institution-logos { display: flex; align-items: stretch; gap: 8px; flex: 0 0 auto; }
+    .logo-box { height: 58px; display: grid; place-items: center; border-radius: 10px; background: #fff; padding: 5px 8px; box-shadow: 0 5px 16px rgba(0,0,0,.13); overflow: hidden; }
+    .logo-box.hmm { width: 142px; }
+    .logo-box.prefeitura { width: 64px; }
+    .logo-box img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .brand h1 { font-size: clamp(20px, 3vw, 28px); line-height: 1.1; margin: 0 0 5px; letter-spacing: -.4px; }
+    .brand p { margin: 0; color: #b9d8d3; font-size: 13px; }
+    .status { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 9px 12px; border-radius: 99px; color: #d9eeea; font-size: 12px; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #62d8a8; box-shadow: 0 0 0 4px rgba(98,216,168,.12); }
+    main { max-width: 1180px; margin: -66px auto 0; padding: 0 24px 50px; }
+    .search-panel { background: var(--paper); border: 1px solid rgba(7,63,59,.08); border-radius: 20px; padding: 26px; box-shadow: var(--shadow); position: relative; z-index: 2; }
+    .eyebrow { color: var(--green2); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+    .search-panel h2 { margin: 0 0 4px; font-size: 23px; letter-spacing: -.35px; }
+    .lead { margin: 0 0 19px; color: var(--muted); }
+    .search-wrap { position: relative; }
+    .search-row { display: flex; gap: 10px; }
+    .input-shell { min-width: 0; flex: 1; position: relative; }
+    .search-icon { position: absolute; left: 17px; top: 50%; transform: translateY(-50%); color: var(--green2); font-size: 20px; }
+    #query { width: 100%; height: 56px; padding: 0 52px 0 48px; color: var(--ink); border: 1.5px solid #b9cbc7; border-radius: 12px; outline: 0; background: #fbfdfc; font-size: 16px; }
+    #query:focus { border-color: var(--green2); box-shadow: 0 0 0 4px rgba(15,118,110,.12); background: white; }
+    #clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: none; border: 0; background: transparent; color: #71817f; border-radius: 8px; width: 35px; height: 35px; font-size: 20px; }
+    #clear:hover { background: #edf3f1; }
+    .primary { height: 56px; border: 0; border-radius: 12px; padding: 0 24px; background: var(--green2); color: white; font-weight: 750; box-shadow: 0 6px 14px rgba(15,118,110,.2); }
+    .primary:hover { background: var(--green); }
+    .suggestions { position: absolute; top: calc(100% + 7px); left: 0; right: 0; max-height: min(420px, 58vh); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: white; border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 16px 35px rgba(17,54,50,.16); display: none; z-index: 10; scrollbar-color: #91b7af #edf3f1; }
+    .suggestions-meta { position: sticky; top: 0; z-index: 1; padding: 8px 15px; background: #f4f8f7; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+    .suggestion { width: 100%; border: 0; border-bottom: 1px solid #edf2f0; background: white; text-align: left; padding: 12px 15px; display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: center; color: var(--ink); }
+    .suggestion:last-child { border-bottom: 0; }
+    .suggestion:hover, .suggestion.active { background: #edf8f5; }
+    .cid-code { color: var(--green2); font-weight: 850; letter-spacing: .03em; }
+    .rel-count { color: var(--muted); font-size: 12px; }
+    .hint { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: #748481; font-size: 12px; }
+    .key { border: 1px solid #ccd7d4; border-bottom-width: 2px; background: #f7faf9; border-radius: 5px; padding: 0 5px; color: #5f716e; }
+    .empty-state { margin-top: 24px; border: 1px dashed #b9cbc7; border-radius: 18px; min-height: 260px; display: grid; place-items: center; text-align: center; padding: 32px; background: rgba(255,255,255,.58); }
+    .empty-icon { width: 68px; height: 68px; display: grid; place-items: center; border-radius: 20px; background: var(--mint); margin: 0 auto 16px; font-size: 30px; }
+    .empty-state h3 { margin: 0 0 6px; font-size: 18px; }
+    .empty-state p { margin: 0; max-width: 460px; color: var(--muted); }
+    #results { display: none; margin-top: 24px; }
+    .cid-summary { border-radius: 18px; padding: 22px 24px; background: #e5f3ee; border: 1px solid #c4ded7; display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+    .cid-summary h2 { margin: 0 0 4px; font-size: 20px; }
+    .cid-summary p { margin: 0; color: #536b67; }
+    .total { flex: 0 0 auto; text-align: center; border-left: 1px solid #bdd8d1; padding-left: 24px; }
+    .total strong { display: block; font-size: 25px; line-height: 1; color: var(--green); }
+    .total span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .toolbar { margin: 18px 0 12px; display: flex; flex-direction: column; align-items: stretch; gap: 9px; }
+    .toolbar p { margin: 0; color: var(--muted); font-size: 13px; }
+    .filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 10px; }
+    .filter-field { display: grid; gap: 4px; }
+    .filter-field label { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .filter-field.cbo { grid-column: span 2; }
+    .filter-field select { width: 100%; min-width: 0; }
+    .subgroup-toggle { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: #174f49; font-size: 11px; font-weight: 750; cursor: pointer; user-select: none; }
+    .subgroup-toggle[hidden] { display: none; }
+    .subgroup-toggle input { width: 15px; height: 15px; margin: 0; accent-color: var(--green2); cursor: pointer; }
+    select { border: 1px solid #cbd8d5; border-radius: 9px; background: white; color: var(--ink); padding: 8px 30px 8px 10px; }
+    .cards { display: grid; gap: 11px; }
+    .card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; grid-template-columns: 1fr auto; gap: 16px; box-shadow: 0 4px 14px rgba(29,60,56,.035); }
+    .card:hover { border-color: #b2cbc5; box-shadow: 0 8px 25px rgba(29,60,56,.07); }
+    .code-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .proc-code { font: 800 14px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--green2); letter-spacing: .025em; }
+    .badge { padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .badge.main { background: #dff3ed; color: #096054; }
+    .badge.secondary { background: #edf0f2; color: #607073; }
+    .proc-name { margin: 0; font-size: 15px; font-weight: 720; letter-spacing: -.05px; }
+    .metadata { display: flex; flex-wrap: wrap; gap: 7px 17px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+    .metadata span::before { content: "•"; color: #9cb1ad; margin-right: 6px; }
+    .copy { align-self: start; border: 1px solid #c7d6d3; background: white; color: var(--green); border-radius: 9px; padding: 8px 11px; font-weight: 700; font-size: 12px; }
+    .copy:hover { background: #edf8f5; border-color: #9fc4bb; }
+    .notice { margin-top: 20px; display: flex; gap: 12px; align-items: flex-start; background: var(--amber-bg); border: 1px solid #ecd39e; border-radius: 13px; padding: 14px 16px; color: #69450b; font-size: 12px; }
+    .notice strong { display: block; color: var(--amber); margin-bottom: 2px; }
+    footer { border-top: 1px solid var(--line); padding: 22px 24px 32px; color: #71817f; text-align: center; font-size: 12px; }
+    .credit { margin-top: 7px; color: #465e5a; font-weight: 700; }
+    mark { background: #f9e6a9; color: inherit; border-radius: 3px; padding: 0 1px; }
+    @media (max-width: 700px) {
+      .header-inner { padding: 18px 18px 88px; align-items: flex-start; }
+      .brand { align-items: flex-start; flex-direction: column; gap: 11px; }
+      .logo-box { height: 47px; } .logo-box.hmm { width: 116px; } .logo-box.prefeitura { width: 53px; }
+      .status { display: none; } main { padding: 0 14px 38px; }
+      .search-panel { padding: 20px 16px; border-radius: 16px; }
+      .search-row { display: block; } .primary { width: 100%; height: 48px; margin-top: 9px; }
+      .suggestions { right: 0; } .suggestion { grid-template-columns: 59px 1fr; } .rel-count { display: none; }
+      .cid-summary { align-items: flex-start; } .total { padding-left: 14px; }
+      .toolbar { align-items: stretch; flex-direction: column; } .filters { grid-template-columns: 1fr; } .filter-field.cbo { grid-column: span 1; } select { width: 100%; }
+      .card { grid-template-columns: 1fr; padding: 16px; } .copy { justify-self: start; }
+    }
+    @media print { header, .search-panel, .toolbar, footer, .copy, .notice { display: none !important; } main { margin: 0; padding: 0; max-width: none; } #results { display: block !important; } .card { break-inside: avoid; box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <header>
+    <div class="header-inner">
+      <div class="brand"><div class="institution-logos"><div class="logo-box hmm"><img src="logo-hmm.png" alt="Hospital Municipal de Marabá"></div><div class="logo-box prefeitura"><img src="logo-prefeitura-maraba.jpeg" alt="Prefeitura de Marabá"></div></div><div><h1>Consulta CID × SIGTAP</h1><p>Núcleo Interno de Regulação · HMM</p></div></div>
+      <div class="status"><span class="dot"></span><span id="competence">Base carregada</span></div>
+    </div>
+  </header>
+  <main>
+    <section class="search-panel" aria-labelledby="search-title">
+      <div class="eyebrow">Pesquisa de compatibilidade</div>
+      <h2 id="search-title">Qual é o diagnóstico?</h2>
+      <p class="lead">Digite o código ou parte da descrição do CID-10.</p>
+      <div class="search-wrap">
+        <div class="search-row">
+          <div class="input-shell">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input id="query" type="search" autocomplete="off" placeholder="Ex.: I21, pneumonia, fratura de fêmur…" aria-label="Código ou descrição do CID" aria-controls="suggestions" aria-autocomplete="list">
+            <button id="clear" title="Limpar pesquisa" aria-label="Limpar pesquisa">×</button>
+            <div id="suggestions" class="suggestions" role="listbox"></div>
+          </div>
+          <button id="search-button" class="primary">Pesquisar</button>
+        </div>
+      </div>
+      <div class="hint"><span class="key">↑</span><span class="key">↓</span> para navegar <span class="key">Enter</span> para selecionar</div>
+    </section>
+
+    <section id="empty" class="empty-state">
+      <div><div class="empty-icon">✚</div><h3>Consulte um CID para começar</h3><p>O sistema mostrará os procedimentos oficialmente relacionados ao diagnóstico na competência carregada do SIGTAP.</p></div>
+    </section>
+
+    <section id="results" aria-live="polite">
+      <div class="cid-summary"><div><div class="eyebrow">CID selecionado</div><h2 id="selected-cid"></h2><p id="selected-name"></p></div><div class="total"><strong id="total">0</strong><span>procedimentos</span></div></div>
+      <div class="toolbar"><p id="result-label"></p><div class="filters"><div class="filter-field"><label for="group-filter">Grupo do procedimento</label><select id="group-filter"><option value="all">Todos os grupos</option></select><label id="hmm-subgroups-wrap" class="subgroup-toggle" for="hmm-subgroups" hidden><input id="hmm-subgroups" type="checkbox">Apenas subgrupos pertinentes ao HMM</label></div><div class="filter-field"><label for="modality-filter">Modalidade</label><select id="modality-filter"><option value="all">Todas as modalidades</option></select></div><div class="filter-field"><label for="registry-filter">Instrumento de registro</label><select id="registry-filter"><option value="all">Todos os instrumentos</option><option value="AIH">AIH</option></select></div><div class="filter-field cbo"><label for="cbo-filter">CBO do profissional</label><select id="cbo-filter"><option value="all">Todos os CBOs</option></select></div><div class="filter-field"><label for="filter">Tipo de vínculo</label><select id="filter"><option value="all">Todos os vínculos</option><option value="principal">Apenas CID principal</option><option value="secondary">Apenas CID secundário</option></select></div></div></div>
+      <div id="cards" class="cards"></div>
+      <div class="notice"><span aria-hidden="true">⚠</span><div><strong>Apoio à decisão, não autorização automática</strong>Confirme as regras, atributos, habilitações e compatibilidades vigentes antes do faturamento ou da regulação. A relação CID × procedimento é reproduzida da tabela oficial carregada.</div></div>
+    </section>
+  </main>
+  <footer><div><span id="footer-data"></span> · Uso local e offline · Nenhum dado pesquisado sai deste computador</div><div class="credit">Idealizado e construído pelo Dr. Vinícius Alves Carvalho</div></footer>
+
+  <script src="dados.js"></script>
+  <script>
+    (() => {
+      const data = window.SIGTAP_DATA;
+      const $ = id => document.getElementById(id);
+      const query = $('query'), suggestions = $('suggestions'), cards = $('cards');
+      let matches = [], active = -1, selected = null, renderedCount = 0, searchTimer = null;
+      const SUGGESTION_BATCH = 80;
+      const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      const formatCode = code => code.length === 4 ? code.slice(0,3) + '.' + code.slice(3) : code;
+      const money = cents => (cents / 100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+      const competence = data.competencia.slice(4,6) + '/' + data.competencia.slice(0,4);
+      const sexLabel = value => ({M:'Masculino',F:'Feminino',I:'Ambos os sexos',N:'Não se aplica'}[value] || 'Sem restrição informada');
+      const complexity = value => ({1:'Atenção primária',2:'Média complexidade',3:'Alta complexidade',9:'Não se aplica'}[value] || 'Complexidade não informada');
+
+      $('competence').textContent = 'Competência ' + competence;
+      $('footer-data').textContent = `SIGTAP ${competence} · ${data.estatisticas.cids.toLocaleString('pt-BR')} CIDs · ${data.estatisticas.relacoes.toLocaleString('pt-BR')} relações`;
+      [...data.ocupacoes].sort((a,b) => a[1].localeCompare(b[1], 'pt-BR')).forEach(occupation => {
+        const option = document.createElement('option');
+        option.value = occupation[0];
+        option.textContent = `${occupation[0]} — ${occupation[1]}`;
+        $('cbo-filter').appendChild(option);
+      });
+      $('cbo-filter').value = data.ocupacoes.some(occupation => occupation[0] === '225125') ? '225125' : 'all';
+      data.grupos.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group[0];
+        option.textContent = `${group[0]} — ${group[1]}`;
+        $('group-filter').appendChild(option);
+      });
+      $('group-filter').value = data.grupos.some(group => group[0] === '03') ? '03' : 'all';
+      $('hmm-subgroups-wrap').hidden = $('group-filter').value !== '03';
+      data.modalidades.forEach(modality => {
+        const option = document.createElement('option');
+        option.value = modality[0];
+        option.textContent = `${modality[0]} — ${modality[1]}`;
+        $('modality-filter').appendChild(option);
+      });
+      $('modality-filter').value = data.modalidades.some(modality => modality[0] === '02') ? '02' : 'all';
+      data.registros.forEach(registry => {
+        const option = document.createElement('option');
+        option.value = registry[0];
+        option.textContent = `${registry[0]} — ${registry[1]}`;
+        $('registry-filter').appendChild(option);
+      });
+      $('registry-filter').value = 'AIH';
+
+      function search(value) {
+        const needle = normalize(value).replace('.', '');
+        if (!needle) return [];
+        const terms = needle.split(/\s+/).filter(Boolean);
+        return data.cids.filter(cid => terms.every(term => cid[2].includes(term))).sort((a,b) => {
+          const ac = a[0].toLowerCase().startsWith(needle) ? 0 : 1;
+          const bc = b[0].toLowerCase().startsWith(needle) ? 0 : 1;
+          if (ac !== bc) return ac - bc;
+          if (!!a[4].length !== !!b[4].length) return b[4].length - a[4].length;
+          return a[0].localeCompare(b[0]);
+        });
+      }
+
+      function appendSuggestionBatch(targetCount = renderedCount + SUGGESTION_BATCH) {
+        if (renderedCount >= matches.length) return;
+        const end = Math.min(matches.length, Math.max(targetCount, renderedCount + SUGGESTION_BATCH));
+        const fragment = document.createDocumentFragment();
+        for (let index = renderedCount; index < end; index++) {
+          const cid = matches[index];
+          const button = document.createElement('button');
+          button.className = 'suggestion' + (index === active ? ' active' : '');
+          button.dataset.index = index;
+          button.setAttribute('role', 'option');
+          button.setAttribute('aria-selected', index === active);
+          button.setAttribute('aria-posinset', index + 1);
+          button.setAttribute('aria-setsize', matches.length);
+          button.innerHTML = `<span class="cid-code">${formatCode(cid[0])}</span><span>${escapeHtml(cid[1])}</span><span class="rel-count">${cid[4].length} vínculo${cid[4].length === 1 ? '' : 's'}</span>`;
+          button.addEventListener('mousedown', event => { event.preventDefault(); choose(cid); });
+          fragment.appendChild(button);
+        }
+        suggestions.appendChild(fragment);
+        renderedCount = end;
+      }
+
+      function paintSuggestions() {
+        suggestions.innerHTML = '';
+        renderedCount = 0;
+        if (!matches.length) {
+          suggestions.innerHTML = '<div style="padding:15px;color:#657876">Nenhum CID encontrado. Tente outro termo.</div>';
+        } else {
+          const meta = document.createElement('div');
+          meta.className = 'suggestions-meta';
+          meta.textContent = `${matches.length.toLocaleString('pt-BR')} correspondência${matches.length === 1 ? '' : 's'} · use a rolagem para ver todas`;
+          suggestions.appendChild(meta);
+          appendSuggestionBatch();
+        }
+        suggestions.style.display = query.value.trim() ? 'block' : 'none';
+        suggestions.scrollTop = 0;
+      }
+
+      function updateActiveOption() {
+        const previous = suggestions.querySelector('.suggestion.active');
+        if (previous) { previous.classList.remove('active'); previous.setAttribute('aria-selected', 'false'); }
+        if (active < 0) return;
+        if (active >= renderedCount) appendSuggestionBatch(active + 1);
+        const current = suggestions.querySelector(`[data-index="${active}"]`);
+        if (current) {
+          current.classList.add('active');
+          current.setAttribute('aria-selected', 'true');
+          current.scrollIntoView({block:'nearest'});
+        }
+      }
+
+      function runSearch(value) {
+        matches = search(value);
+        active = -1;
+        paintSuggestions();
+      }
+
+      function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+
+      function choose(cid) {
+        clearTimeout(searchTimer);
+        selected = cid; query.value = `${formatCode(cid[0])} — ${cid[1]}`;
+        $('clear').style.display = 'block'; suggestions.style.display = 'none'; $('filter').value = 'all';
+        render();
+      }
+
+      function render() {
+        if (!selected) return;
+        $('empty').style.display = 'none'; $('results').style.display = 'block';
+        $('selected-cid').textContent = formatCode(selected[0]); $('selected-name').textContent = selected[1];
+        const mode = $('filter').value;
+        const group = $('group-filter').value;
+        const restrictSubgroups = group === '03' && $('hmm-subgroups').checked;
+        const modality = $('modality-filter').value;
+        const registry = $('registry-filter').value;
+        const cbo = $('cbo-filter').value;
+        const aihRecords = ['03', '04', '05'];
+        const hmmClinicalSubgroups = ['03', '04', '05', '06', '07', '08'];
+        const links = selected[4].filter(link => {
+          const proc = data.procedimentos[link[0]];
+          return (mode === 'all' || (mode === 'principal' ? link[1] === 'S' : link[1] !== 'S')) &&
+            (group === 'all' || link[0].startsWith(group)) &&
+            (!restrictSubgroups || hmmClinicalSubgroups.includes(link[0].slice(2, 4))) &&
+            (cbo === 'all' || (proc[9] || []).includes(cbo)) &&
+            (modality === 'all' || (proc[10] || []).includes(modality)) &&
+            (registry === 'all' || (registry === 'AIH' ? (proc[11] || []).some(code => aihRecords.includes(code)) : (proc[11] || []).includes(registry)));
+        });
+        $('total').textContent = links.length;
+        $('result-label').textContent = links.length ? `Exibindo ${links.length} resultado${links.length === 1 ? '' : 's'}` : 'Nenhum procedimento neste filtro';
+        cards.innerHTML = '';
+        links.sort((a,b) => (a[1] === b[1] ? data.procedimentos[a[0]][1].localeCompare(data.procedimentos[b[0]][1]) : (a[1] === 'S' ? -1 : 1))).forEach(link => {
+          const proc = data.procedimentos[link[0]];
+          if (!proc) return;
+          const totalValue = proc[6] + proc[7] + proc[8];
+          const card = document.createElement('article'); card.className = 'card';
+          card.innerHTML = `<div><div class="code-row"><span class="proc-code">${proc[0]}</span><span class="badge ${link[1] === 'S' ? 'main' : 'secondary'}">CID ${link[1] === 'S' ? 'principal' : 'secundário'}</span></div><p class="proc-name">${escapeHtml(proc[1])}</p><div class="metadata"><span>${complexity(proc[2])}</span><span>${sexLabel(proc[3])}</span>${totalValue ? `<span>Valor SIGTAP ${money(totalValue)}</span>` : ''}</div></div><button class="copy" data-code="${proc[0]}">Copiar código</button>`;
+          cards.appendChild(card);
+        });
+        cards.querySelectorAll('.copy').forEach(button => button.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(button.dataset.code); button.textContent = 'Copiado ✓'; }
+          catch { const area = document.createElement('textarea'); area.value = button.dataset.code; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); button.textContent = 'Copiado ✓'; }
+          setTimeout(() => button.textContent = 'Copiar código', 1400);
+        }));
+      }
+
+      query.addEventListener('input', () => {
+        const value = query.value;
+        $('clear').style.display = value ? 'block' : 'none';
+        clearTimeout(searchTimer);
+        if (!value.trim()) {
+          matches = []; active = -1; renderedCount = 0; suggestions.style.display = 'none';
+          return;
+        }
+        matches = []; active = -1; renderedCount = 0;
+        suggestions.innerHTML = '<div style="padding:15px;color:#657876">Pesquisando…</div>';
+        suggestions.style.display = 'block';
+        searchTimer = setTimeout(() => { searchTimer = null; if (query.value === value) runSearch(value); }, 140);
+      });
+      query.addEventListener('focus', () => { if (query.value && !selected && matches.length) suggestions.style.display = 'block'; });
+      query.addEventListener('keydown', event => {
+        if (event.key === 'ArrowDown' && matches.length) { event.preventDefault(); active = (active + 1) % matches.length; updateActiveOption(); }
+        else if (event.key === 'ArrowUp' && matches.length) { event.preventDefault(); active = (active - 1 + matches.length) % matches.length; updateActiveOption(); }
+        else if (event.key === 'Enter') { event.preventDefault(); const cid = matches[active >= 0 ? active : 0]; if (cid) choose(cid); }
+        else if (event.key === 'Escape') suggestions.style.display = 'none';
+      });
+      suggestions.addEventListener('scroll', () => {
+        if (suggestions.scrollTop + suggestions.clientHeight >= suggestions.scrollHeight - 90) appendSuggestionBatch();
+      });
+      document.addEventListener('click', event => { if (!event.target.closest('.search-wrap')) suggestions.style.display = 'none'; });
+      $('clear').addEventListener('click', () => { clearTimeout(searchTimer); query.value = ''; selected = null; matches = []; renderedCount = 0; suggestions.style.display = 'none'; $('clear').style.display = 'none'; $('results').style.display = 'none'; $('empty').style.display = 'grid'; query.focus(); });
+      $('search-button').addEventListener('click', () => { clearTimeout(searchTimer); matches = search(query.value); if (matches[0]) choose(matches[0]); else paintSuggestions(); });
+      $('filter').addEventListener('change', render);
+      $('cbo-filter').addEventListener('change', render);
+      $('group-filter').addEventListener('change', () => { $('hmm-subgroups-wrap').hidden = $('group-filter').value !== '03'; render(); });
+      $('hmm-subgroups').addEventListener('change', render);
+      $('modality-filter').addEventListener('change', render);
+      $('registry-filter').addEventListener('change', render);
+    })();
+  </script>
+</body>
+</html>
